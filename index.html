@@ -6,15 +6,21 @@
 <title>FRUITector 2.0 — AI Food Analysis Dashboard</title>
 <meta name="description" content="Control panel for FRUITector 2.0, an AI-powered IoT food analysis system running on ESP32-CAM." />
 
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231B4332'/%3E%3Cpath d='M10 20c0-6 4-11 11-11-1 7-5 11-11 11Z' fill='%236EE7A0'/%3E%3Cpath d='M10 20c1.5-3 4-5.5 7-7' stroke='%231B4332' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230E3624'/%3E%3Cpath d='M10 20c0-6 4-11 11-11-1 7-5 11-11 11Z' fill='%2374FFC9'/%3E%3Cpath d='M10 20c1.5-3 4-5.5 7-7' stroke='%230E3624' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
-<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
+
+<div class="bg-aurora" aria-hidden="true">
+  <span class="aurora-blob aurora-blob-a"></span>
+  <span class="aurora-blob aurora-blob-b"></span>
+  <span class="aurora-grid"></span>
+</div>
 
 <a class="skip-link" href="#main">Skip to dashboard</a>
 
@@ -227,7 +233,7 @@
 
 <div class="toast-stack" id="toastStack" aria-live="polite"></div>
 
-<script src="api.js"></script>
-<script src="app.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
