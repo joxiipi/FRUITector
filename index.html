@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FRUITector 2.0 — AI Food Analysis Dashboard</title>
+<meta name="description" content="Control panel for FRUITector 2.0, an AI-powered IoT food analysis system running on ESP32-CAM." />
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231B4332'/%3E%3Cpath d='M10 20c0-6 4-11 11-11-1 7-5 11-11 11Z' fill='%236EE7A0'/%3E%3Cpath d='M10 20c1.5-3 4-5.5 7-7' stroke='%231B4332' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to dashboard</a>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" width="34" height="34" aria-hidden="true">
+      <rect width="32" height="32" rx="8" fill="var(--pine-800)"/>
+      <path d="M10 20c0-6 4-11 11-11-1 7-5 11-11 11Z" fill="var(--scan-400)"/>
+      <path d="M10 20c1.5-3 4-5.5 7-7" stroke="var(--pine-800)" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+    </svg>
+    <div class="brand-text">
+      <span class="brand-name">FRUITector</span>
+      <span class="brand-version">2.0</span>
+    </div>
+  </div>
+
+  <div class="status-cluster">
+    <div class="status-pill" id="wifiStatus" data-state="offline">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span class="status-label">Wi‑Fi</span>
+      <span class="status-value" id="wifiValue">Not connected</span>
+    </div>
+    <div class="status-pill" id="deviceStatus" data-state="offline">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span class="status-label">Device</span>
+      <span class="status-value" id="deviceValue">Disconnected</span>
+    </div>
+  </div>
+</header>
+
+<section class="connect-bar" aria-label="Device connection">
+  <div class="connect-field">
+    <label for="deviceAddress">ESP32‑CAM address</label>
+    <input type="text" id="deviceAddress" inputmode="url" autocomplete="off" spellcheck="false" placeholder="192.168.4.1 or fruitector.local" />
+  </div>
+  <button id="connectBtn" class="btn btn-primary" type="button">Connect</button>
+  <p class="mixed-content-warning" id="mixedContentWarning" hidden>
+    ⚠ This page is served over HTTPS, so your browser may block plain‑HTTP requests to the device. See the README for workarounds.
+  </p>
+</section>
+
+<main id="main" class="dashboard">
+
+  <section class="panel camera-panel" aria-labelledby="cameraHeading">
+    <div class="panel-header">
+      <h2 id="cameraHeading">Camera Preview</h2>
+      <span class="live-indicator" id="liveIndicator" hidden>● LIVE</span>
+    </div>
+
+    <div class="viewfinder" id="viewfinder" data-state="idle">
+      <img id="cameraFeed" alt="Live camera feed from ESP32‑CAM" hidden />
+      <div class="viewfinder-placeholder" id="viewfinderPlaceholder">
+        <svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true">
+          <rect x="6" y="14" width="36" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="2"/>
+          <circle cx="24" cy="26" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M17 14l2.5-4h9L31 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p>No camera feed yet. Connect your device to begin.</p>
+      </div>
+      <span class="corner corner-tl" aria-hidden="true"></span>
+      <span class="corner corner-tr" aria-hidden="true"></span>
+      <span class="corner corner-bl" aria-hidden="true"></span>
+      <span class="corner corner-br" aria-hidden="true"></span>
+      <span class="scan-line" id="scanLine" aria-hidden="true"></span>
+    </div>
+
+    <div class="controls">
+      <button id="scanBtn" class="btn btn-scan" type="button" disabled>
+        <svg class="btn-scan-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <path d="M4 8V5a1 1 0 0 1 1-1h3M20 8V5a1 1 0 0 0-1-1h-3M4 16v3a1 1 0 0 0 1 1h3M20 16v3a1 1 0 0 1-1 1h-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        <span class="btn-scan-text">Scan Food</span>
+      </button>
+
+      <div class="control-row">
+        <button id="refreshBtn" class="btn btn-secondary" type="button" disabled>Refresh</button>
+        <button id="ledBtn" class="btn btn-secondary" type="button" data-led="off" disabled>LED&nbsp;Off</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel result-panel" aria-labelledby="resultHeading">
+    <div class="panel-header">
+      <h2 id="resultHeading">AI Detection Result</h2>
+      <span class="timestamp" id="resultTimestamp">—</span>
+    </div>
+
+    <div class="result-body">
+      <div class="result-empty" id="resultEmpty">
+        <p>Run a scan to see the AI analysis here.</p>
+      </div>
+
+      <div class="result-data" id="resultData" hidden>
+        <div class="food-identity">
+          <span class="food-name" id="foodName">—</span>
+          <span class="food-category" id="foodCategory">—</span>
+        </div>
+
+        <div class="freshness-row">
+          <span class="freshness-badge" id="freshnessBadge" data-level="unknown">—</span>
+        </div>
+
+        <div class="confidence-row">
+          <div class="confidence-label">
+            <span>Confidence</span>
+            <span id="confidenceValue">0%</span>
+          </div>
+          <div class="confidence-track">
+            <div class="confidence-fill" id="confidenceFill"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel sensor-panel" aria-label="Sensor readings">
+    <div class="stat-card">
+      <svg class="stat-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path d="M12 15.5V5a2 2 0 1 0-4 0v10.5a4 4 0 1 0 4 0Z" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <circle cx="10" cy="18" r="1.6" fill="currentColor"/>
+      </svg>
+      <div class="stat-info">
+        <span class="stat-label">Temperature</span>
+        <span class="stat-value"><span id="tempValue">—</span><small>°C</small></span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <svg class="stat-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path d="M12 3s6 7 6 11.2A6 6 0 1 1 6 14.2C6 10 12 3 12 3Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+      </svg>
+      <div class="stat-info">
+        <span class="stat-label">Humidity</span>
+        <span class="stat-value"><span id="humidityValue">—</span><small>%</small></span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <svg class="stat-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path d="M3 8.5a13 13 0 0 1 18 0M6 12a8.5 8.5 0 0 1 12 0M9.2 15.5a4.2 4.2 0 0 1 5.6 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <circle cx="12" cy="19" r="1.4" fill="currentColor"/>
+      </svg>
+      <div class="stat-info">
+        <span class="stat-label">Signal</span>
+        <span class="stat-value"><span id="rssiValue">—</span><small>dBm</small></span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <svg class="stat-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="stat-info">
+        <span class="stat-label">Uptime</span>
+        <span class="stat-value" id="uptimeValue">—</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel history-panel" aria-labelledby="historyHeading">
+    <div class="panel-header">
+      <h2 id="historyHeading">Scan History</h2>
+      <button id="clearHistoryBtn" class="btn btn-ghost" type="button">Clear</button>
+    </div>
+
+    <div class="history-table-wrap">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th scope="col">Time</th>
+            <th scope="col">Food</th>
+            <th scope="col">Category</th>
+            <th scope="col">Freshness</th>
+            <th scope="col">Confidence</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <tr class="history-empty-row"><td colspan="5">No scans yet — your history will appear here.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <p>FRUITector 2.0 — dashboard for an ESP32‑CAM food scanner.</p>
+  <details class="api-docs">
+    <summary>API reference</summary>
+    <div class="api-docs-body">
+      <p>The dashboard talks to the device over plain HTTP REST calls. Point firmware at these routes:</p>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Path</th><th>Returns</th></tr></thead>
+        <tbody>
+          <tr><td>GET</td><td>/api/status</td><td>{ device, firmware, uptime_s, connected }</td></tr>
+          <tr><td>GET</td><td>/api/wifi</td><td>{ ssid, rssi, ip }</td></tr>
+          <tr><td>GET</td><td>/api/sensors</td><td>{ temperature_c, humidity_pct }</td></tr>
+          <tr><td>GET</td><td>/stream</td><td>MJPEG live video (multipart/x-mixed-replace)</td></tr>
+          <tr><td>GET</td><td>/capture</td><td>Single JPEG snapshot</td></tr>
+          <tr><td>POST</td><td>/api/scan</td><td>{ food_name, category, freshness, confidence, temperature_c, humidity_pct }</td></tr>
+          <tr><td>POST</td><td>/api/led</td><td>Body { state: "on" | "off" }</td></tr>
+        </tbody>
+      </table>
+      <p>Full contract and payload examples are in <code>README.md</code>.</p>
+    </div>
+  </details>
+</footer>
+
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
